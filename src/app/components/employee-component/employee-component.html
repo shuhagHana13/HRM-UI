@@ -1,0 +1,21 @@
+<h2 class="employee-header">Employee List</h2>
+
+<div *ngIf="isLoading()">
+  Loading employees...
+</div>
+
+<div class="col-md-6" *ngIf="!isLoading() && employeeList().length > 0">
+  <div class="col-md-6 mb-3" *ngFor="let emp of employeeList()">
+    <div class="card employee-card">
+      <div class="card-body">
+        <p><strong>ID:</strong> {{ emp.employeeId }}</p>
+        <p><strong>Name:</strong> {{ emp.employeeName }}</p>
+        <p><strong>Details:</strong> {{ emp.designationName }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="!isLoading() && employeeList().length === 0">
+  No employees found
+</div>
