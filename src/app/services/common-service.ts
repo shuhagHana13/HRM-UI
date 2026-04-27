@@ -65,4 +65,8 @@ export class CommonService {
     return this.http.get<CommonDropdownDto[]>(`${this.baseUrl}/relationshipdropdown`, this.params(idClient));
   }
 
+   getDepartments(idClient: number): Observable<CommonDropdownDto[]> {
+    return this.http.get<CommonDropdownDto[]>(`${this.baseUrl}/departmentsdropdown`, this.params(idClient));
+  }
+
 }
