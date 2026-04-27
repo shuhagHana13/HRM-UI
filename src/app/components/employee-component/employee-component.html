@@ -1,21 +1,278 @@
-<h2 class="employee-header">Employee List</h2>
+<div class="container-fluid py-3 employee-layout">
+  <div class="row h-100">
 
-<div *ngIf="isLoading()">
-  Loading employees...
-</div>
+    <!-- ================= LEFT: EMPLOYEE DIRECTORY ================= -->
+   
+<div class="col-3 border-end employee-sidebar">
+  <div class="employee-sidebar-header">
+  <h4 class="fw-bold mb-3">Employee Directory</h4>
 
-<div class="col-md-6" *ngIf="!isLoading() && employeeList().length > 0">
-  <div class="col-md-6 mb-3" *ngFor="let emp of employeeList()">
-    <div class="card employee-card">
-      <div class="card-body">
-        <p><strong>ID:</strong> {{ emp.employeeId }}</p>
-        <p><strong>Name:</strong> {{ emp.employeeName }}</p>
-        <p><strong>Details:</strong> {{ emp.designationName }}</p>
+        <!-- Search -->
+        <input #searchInput type="text" class="form-control mb-3" placeholder="Search by name, ID or role..."
+          (input)="searchTerm.set(searchInput.value)" />
       </div>
+        <div *ngIf="isLoading()">Loading employees...</div>
+        <ng-container *ngIf="!isLoading() && filteredEmployeeList().length > 0">
+          <div class="card employee-card mb-1" *ngFor="let emp of filteredEmployeeList()">
+            <div class="card-body">
+              <p><strong>ID:</strong> {{ emp.employeeId }}</p>
+              <p><strong>Name:</strong> {{ emp.employeeName }}</p>
+              <p><strong>Details:</strong> {{ emp.designationName }}</p>
+            </div>
+          </div>
+        </ng-container>
+        <div *ngIf="!isLoading() && filteredEmployeeList().length === 0">
+          No employees found
+        </div>
+    </div>
+
+    <!-- ================= RIGHT: EMPLOYEE MASTER FORM ================= -->
+    <div class="col-lg-9 ps-4 employee-content">
+
+      <!-- Header -->
+      <div class=" employee-header d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h4 class="fw-bold mb-0">Employee Master</h4>
+
+        </div>
+
+        <div>
+          <button class="btn btn-outline-secondary me-2" type="button">
+            Cancel
+          </button>
+          <button class="btn btn-primary" type="button" (click)="submit()">
+            Save Profile
+          </button>
+        </div>
+      </div>
+
+      <form [formGroup]="employeeForm">
+
+        <!--BASIC INFO  -->
+        <div class="card mb-4 shadow-sm">
+          <div class="card-body row g-3">
+
+            <div class="col-md-3">
+              <label class="form-label">Full Name</label>
+              <input class="form-control" formControlName="employeeName">
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Employee ID</label>
+              <input class="form-control" formControlName="id" readonly>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Date of Birth</label>
+              <input type="date" class="form-control" formControlName="birthDate">
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Gender</label>
+              <select class="form-select" formControlName="idGender">
+                <option *ngFor="let g of genders" [value]="g.id">
+                  {{ g.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Contact Number</label>
+              <input class="form-control" formControlName="contactNo">
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Date of Joining</label>
+              <input type="date" class="form-control" formControlName="joiningDate">
+            </div>
+
+            <!-- <div class="col-md-3">
+              <label class="form-label">Department</label>
+              <select class="form-select" formControlName="idDepartment">
+                <option *ngFor="let d of departments" [value]="d.id">
+                  {{ d.name }}
+                </option>
+              </select>
+            </div> -->
+
+            <div class="col-md-3">
+              <label class="form-label">Employment Type</label>
+              <select class="form-select" formControlName="idEmployeeType">
+                <option *ngFor="let e of employeeTypes" [value]="e.id">
+                  {{ e.name }}
+                </option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- EDUCATION  -->
+        <div class="row ps-2">
+
+          <div class="card m-1 shadow-sm col-md-6">
+            <div class="card-header fw-bold d-flex justify-content-between">
+              Education
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="addEducation()">
+                + Add Record
+              </button>
+            </div>
+
+            <div class="card-body table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Degree</th>
+                    <th>Institute</th>
+                    <th>Year</th>
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="employeeEducationInfos">
+                  <tr *ngFor="let edu of employeeEducationInfos.controls;
+                              let i = index" [formGroupName]="i">
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="major">
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="instituteName">
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="passingYear">
+                    </td>
+                  </tr>
+                </tbody>
+
+              </table>
+            </div>
+          </div>
+
+          <!--  FAMILY-->
+          <div class="card m-1 shadow-sm col-6">
+            <div class="card-header fw-bold d-flex justify-content-between">
+              Family Info
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="addFamily()">
+                + Add Record
+              </button>
+            </div>
+
+            <div class="card-body table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Relation</th>
+                    <th>Name</th>
+                    <th>Contact</th>
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="employeeFamilyInfos">
+                  <tr *ngFor="let fam of employeeFamilyInfos.controls;
+                              let i = index" [formGroupName]="i">
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="idRelationship">
+                        <option *ngFor="let r of relationships" [value]="r.id">
+                          {{ r.name }}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="name">
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="contactNo">
+                    </td>
+                  </tr>
+                </tbody>
+
+              </table>
+            </div>
+          </div>
+          <!--  FAMILY-->
+          <div class="card m-2 shadow-sm col-6">
+            <div class="card-header fw-bold d-flex justify-content-between">
+              Document Info
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="addFamily()">
+                + Add Record
+              </button>
+            </div>
+
+            <div class="card-body table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Relation</th>
+                    <th>Name</th>
+                    <th>Contact</th>
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="employeeFamilyInfos">
+                  <tr *ngFor="let fam of employeeFamilyInfos.controls;
+                              let i = index" [formGroupName]="i">
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="idRelationship">
+                        <option *ngFor="let r of relationships" [value]="r.id">
+                          {{ r.name }}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="name">
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="contactNo">
+                    </td>
+                  </tr>
+                </tbody>
+
+              </table>
+            </div>
+          </div>
+          <!--  FAMILY-->
+          <div class="card m-1 shadow-sm col-6">
+            <div class="card-header fw-bold d-flex justify-content-between">
+              Certification Info
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="addFamily()">
+                + Add Record
+              </button>
+            </div>
+
+            <div class="card-body table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Relation</th>
+                    <th>Name</th>
+                    <th>Contact</th>
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="employeeFamilyInfos">
+                  <tr *ngFor="let fam of employeeFamilyInfos.controls;
+                              let i = index" [formGroupName]="i">
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="idRelationship">
+                        <option *ngFor="let r of relationships" [value]="r.id">
+                          {{ r.name }}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="name">
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" formControlName="contactNo">
+                    </td>
+                  </tr>
+                </tbody>
+
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </form>
     </div>
   </div>
-</div>
-
-<div *ngIf="!isLoading() && employeeList().length === 0">
-  No employees found
 </div>

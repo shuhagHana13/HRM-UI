@@ -1,10 +1,47 @@
+/* FULL HEIGHT LAYOUT */
+.employee-layout {
+  height: 100vh;
+}
 
+/* LEFT SIDEBAR */
+.employee-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+/* RIGHT CONTENT */
+.employee-content {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* FIXED HEADER */
 .employee-header {
   position: sticky;
   top: 0;
-  background-color: #ffffff;
-  padding: 3px 0;
-  z-index: 50;
-  border-bottom: 2px solid
-  
+  background: #fff;
+  z-index: 10;
+  padding: 12px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+/* SCROLLABLE BODY */
+.employee-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 15px;
+}
+
+.employee-sidebar-header {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  padding: 12px 0;
+  border-bottom: 1px solid #ddd;
 }
