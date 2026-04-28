@@ -29,9 +29,11 @@ export class EmployeeService {
   }
 
 
-  updateEmployee(employee: EmployeeDto): Observable<{ message: string }> {
-    return this.http.put<{ message: string }>( this.baseUrl,employee);
-  }
+updateEmployee(employeeId: number, payload: any) {
+  const params = new HttpParams().set('idClient', payload.idClient);
+  return this.http.put(`${this.baseUrl}/${employeeId}`, payload, { params });
+}
+
 
  
   softDeleteEmployee(idClient: number, employeeId: number): Observable<{ message: string }> {

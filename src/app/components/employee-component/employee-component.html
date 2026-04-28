@@ -10,11 +10,11 @@
       </div>
       <div *ngIf="isLoading()">Loading employees...</div>
       <ng-container *ngIf="!isLoading() && filteredEmployeeList().length > 0">
-        <div class="card employee-card mb-1" *ngFor="let emp of filteredEmployeeList()">
+        <div class="card employee-card mb-1"  (click)="onEmployeeClick(emp.employeeId)"   style="cursor: pointer" *ngFor="let emp of filteredEmployeeList()">
           <div class="card-body">
-            <p><strong>ID:</strong> {{ emp.employeeId }}</p>
-            <p><strong>Name:</strong> {{ emp.employeeName }}</p>
-            <p><strong>Details:</strong> {{ emp.designationName }}</p>
+            <p> # {{ emp.employeeId }}
+            {{ emp.employeeName }},  
+          {{ emp.designationName }}</p>
           </div>
         </div>
       </ng-container>
@@ -30,9 +30,11 @@
         <div>
           <h4 class="fw-bold mb-0">Employee Master</h4>
         </div>
-        <div>
-          <button class="btn btn-outline-secondary me-2" type="button"> Cancel</button>
-          <button class="btn btn-primary" type="button" (click)="submit()">Save Profile</button>
+        <div class="d-flex gap-1">
+         <button type="button"class="btn btn-outline-primary" (click)="submit()"> {{ isEditMode() ? 'Update ' : 'Save ' }}</button>      
+          <button *ngIf="isEditMode()" type="button" class="btn btn-outline-danger"(click)="deleteEmployee()"  [disabled]="isSaving()"> Delete </button>
+          <button type="button" class="btn btn-outline-secondary " (click)="cancelEdit()" [disabled]="isSaving()"> Cancel</button>
+
         </div>
       </div>
       <form [formGroup]="employeeForm">
@@ -61,7 +63,7 @@
           <div class="col-md-3">
             <label class="form-label">Gender</label>
             <select class="form-select" formControlName="idGender">
-              <option *ngFor="let g of genders()" [value]="g.id">{{ g.name }}</option>
+              <option *ngFor="let g of genders()" [ngValue]="g.id">{{ g.name }}</option>
             </select>
           </div>
 
@@ -73,62 +75,50 @@
           <div class="col-md-3">
             <label class="form-label">Marital Status</label>
             <select class="form-select" formControlName="idMaritalStatus">
-              <option *ngFor="let m of maritalStatuses()" [value]="m.id">{{ m.name }}</option>
+              <option *ngFor="let m of maritalStatuses()" [ngValue]="m.id">{{ m.name }}</option>
             </select>
           </div>
 
           <div class="col-md-3">
             <label class="form-label">Religion</label>
             <select class="form-select" formControlName="idReligion">
-              <option *ngFor="let r of religions()" [value]="r.id">{{ r.name }}</option>
+              <option *ngFor="let r of religions()" [ngValue]="r.id">{{ r.name }}</option>
             </select>
           </div>
 
           <div class="col-md-3">
             <label class="form-label">Job Type</label>
             <select class="form-select" formControlName="idJobType">
-              <option *ngFor="let j of jobTypes()" [value]="j.id">{{ j.name }}</option>
+              <option *ngFor="let j of jobTypes()" [ngValue]="j.id">{{ j.name }}</option>
             </select>
           </div>
 
           <div class="col-md-3">
             <label class="form-label">Employee Type</label>
             <select class="form-select" formControlName="idEmployeeType">
-              <option *ngFor="let e of employeeTypes()" [value]="e.id">{{ e.name }}</option>
+              <option *ngFor="let e of employeeTypes()" [ngValue]="e.id">{{ e.name }}</option>
             </select>
           </div>
 
-            <div class="col-md-3">
+          <div class="col-md-3">
             <label class="form-label">Department </label>
             <select class="form-select" formControlName="idDepartment">
-              <option *ngFor="let d of departments()" [value]="d.id">{{ d.name }}</option>
+              <option *ngFor="let d of departments()" [ngValue]="d.id">{{ d.name }}</option>
             </select>
           </div>
 
-          <!-- <div class="col-md-3">
-            <label class="form-label">Department</label>
-            <select class="form-select" formControlName="idDepartment">
-              <option *ngFor="let d of departments()" [value]="d.id">{{ d.name }}</option>
-            </select>
-          </div> -->
-
-          <!-- <div class="col-md-3" *ngIf="employeeImagePreview()">
-            <label class="form-label">Preview</label>
-            <img [src]="employeeImagePreview()" class="img-thumbnail" style="max-height: 120px;"
-              alt="Employee Image Preview" />
-          </div> -->
 
           <div class="col-md-3">
             <label class="form-label">Section</label>
             <select class="form-select" formControlName="idSection">
-              <option *ngFor="let s of sections()" [value]="s.id">{{ s.name }}</option>
+              <option *ngFor="let s of sections()" [ngValue]="s.id">{{ s.name }}</option>
             </select>
           </div>
 
           <div class="col-md-3">
             <label class="form-label">Designation</label>
             <select class="form-select" formControlName="idDesignation">
-              <option *ngFor="let d of designations()" [value]="d.id">{{ d.name }}</option>
+              <option *ngFor="let d of designations()" [ngValue]="d.id">{{ d.name }}</option>
             </select>
           </div>
 
@@ -140,7 +130,7 @@
           <div class="col-md-3">
             <label class="form-label">Week Off</label>
             <select class="form-select" formControlName="idWeekOff">
-              <option *ngFor="let w of weekOffs()" [value]="w.id">{{ w.name }}</option>
+              <option *ngFor="let w of weekOffs()" [ngValue]="w.id">{{ w.name }}</option>
             </select>
           </div>
 
@@ -149,20 +139,34 @@
             <input class="form-control" formControlName="contactNo">
           </div>
 
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label">National ID</label>
             <input class="form-control" formControlName="nationalIdentificationNumber">
           </div>
 
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label">Permanent Address</label>
             <input class="form-control" formControlName="address">
           </div>
 
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label">Present Address</label>
             <input class="form-control" formControlName="presentAddress">
           </div>
+
+
+          <div class="col-md-3">
+            <label class="form-label">Employee Image</label>
+
+            <!-- Image Upload -->
+            <input type="file" class="form-control mb-2" accept="image/*" (change)="onImageSelect($event)" />
+
+            <!-- Image Preview -->
+            <img *ngIf="employeeImagePreview()" [src]="employeeImagePreview()" class="img-thumbnail"
+              style="max-height: 120px; width: 100%; object-fit: cover;" alt="Employee Image Preview" />
+          </div>
+
+
 
           <div class="col-md-6 d-flex align-items-center gap-3">
             <div class="form-check">
@@ -173,7 +177,7 @@
               <input class="form-check-input" type="checkbox" formControlName="hasAttendenceBonus">
               <label class="form-check-label">Attendance Bonus</label>
             </div>
-             <div class="form-check">
+            <div class="form-check">
               <input class="form-check-input" type="checkbox" formControlName="isActive">
               <label class="form-check-label">Active</label>
             </div>
@@ -183,7 +187,7 @@
 
         <div class="row mt-5">
           <!-- ================= EDUCATION ================= -->
-          <div class="card mb-3 col-md-6 ">
+          <div class="card mb-3 col-md-12">
             <div class="card-header fw-bold d-flex justify-content-between align-items-center">
               Education
               <button type="button" class="btn btn-sm btn-outline-primary" (click)="addEducation()">
@@ -191,7 +195,7 @@
               </button>
             </div>
             <div class="card-body table-responsive">
-              <table class="table table-bordered table-sm align-middle">
+              <table class="table  table-sm align-middle">
                 <thead class="table-light">
                   <tr>
                     <th style="width: 16%">Education Level</th>
@@ -206,24 +210,24 @@
                   <tr *ngFor="let edu of education.controls; let i = index" [formGroupName]="i">
                     <td>
                       <select class="form-select form-select-sm" formControlName="idEducationLevel">
-                        <option value="">Select</option>
-                        <option *ngFor="let l of educationLevels()" [value]="l.id">
+                        <option ngValue="null">Select</option>
+                        <option *ngFor="let l of educationLevels()" [ngValue]="l.id">
                           {{ l.name }}
                         </option>
                       </select>
                     </td>
                     <td>
                       <select class="form-select form-select-sm" formControlName="idEducationExamination">
-                        <option value="">Select</option>
-                        <option *ngFor="let e of educationExams()" [value]="e.id">
+                        <option ngValue="null">Select</option>
+                        <option *ngFor="let e of educationExams()" [ngValue]="e.id">
                           {{ e.name }}
                         </option>
                       </select>
                     </td>
                     <td>
                       <select class="form-select form-select-sm" formControlName="idEducationResult">
-                        <option value="">Select</option>
-                        <option *ngFor="let r of educationResults()" [value]="r.id">
+                        <option ngValue="null">Select</option>
+                        <option *ngFor="let r of educationResults()" [ngValue]="r.id">
                           {{ r.name }}
                         </option>
                       </select>
@@ -247,72 +251,8 @@
               </table>
             </div>
           </div>
-
-          <!-- ================= FAMILY INFORMATION ================= -->
-          <div class="card mb-3 col-md-6">
-            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-              Family Information
-              <button type="button" class="btn btn-sm btn-outline-primary" (click)="addFamily()">
-                + Add Row
-              </button>
-            </div>
-
-            <div class="card-body table-responsive">
-              <table class="table table-bordered table-sm align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th style="width: 16%">Relation</th>
-                    <th style="width: 16%">Name</th>
-                    <th style="width: 12%">Gender</th>
-                    <th style="width: 14%">Date of Birth</th>
-                    <th style="width: 14%">Contact No</th>
-                    <th style="width: 14%">Current Address</th>
-                    <th style="width: 14%">Permanent Address</th>
-                  </tr>
-                </thead>
-                <tbody formArrayName="employeeFamilyInfos">
-                  <tr *ngFor="let fam of family.controls; let i = index" [formGroupName]="i">
-                    <td>
-                      <select class="form-select form-select-sm" formControlName="idRelationship">
-                        <option value="">Select</option>
-                        <option *ngFor="let r of relationships()" [value]="r.id">
-                          {{ r.name }}
-                        </option>
-                      </select>
-                    </td>
-                    <td>
-                      <input class="form-control form-control-sm" placeholder="Name" formControlName="name">
-                    </td>
-                    <td>
-                      <select class="form-select form-select-sm" formControlName="idGender">
-                        <option value="">Select</option>
-                        <option *ngFor="let g of genders()" [value]="g.id">
-                          {{ g.name }}
-                        </option>
-                      </select>
-                    </td>
-                    <td>
-                      <input type="date" class="form-control form-control-sm" formControlName="dateOfBirth">
-                    </td>
-                    <td>
-                      <input class="form-control form-control-sm" placeholder="Contact No" formControlName="contactNo">
-                    </td>
-                    <td>
-                      <input class="form-control form-control-sm" placeholder="Current Address"
-                        formControlName="currentAddress">
-                    </td>
-                    <td>
-                      <input class="form-control form-control-sm" placeholder="Permanent Address"
-                        formControlName="permanentAddress">
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- ================= PROFESSIONAL CERTIFICATIONS ================= -->
-          <div class="card mb-3 col-md-6">
+             <!-- ================= PROFESSIONAL CERTIFICATIONS ================= -->
+          <div class="card mb-3 col-md-12">
             <div class="card-header fw-bold d-flex justify-content-between align-items-center">
               Professional Certifications
               <button type="button" class="btn btn-sm btn-outline-primary" (click)="addCertification()">
@@ -355,6 +295,71 @@
               </table>
             </div>
           </div>
+
+          <!-- ================= FAMILY INFORMATION ================= -->
+          <div class="card mb-3 col-md-6">
+            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+              Family Information
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="addFamily()">
+                + Add Row
+              </button>
+            </div>
+
+            <div class="card-body table-responsive">
+              <table class="table table-bordered table-sm align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 16%">Relation</th>
+                    <th style="width: 16%">Name</th>
+                    <th style="width: 12%">Gender</th>
+                    <th style="width: 14%">Date of Birth</th>
+                    <th style="width: 14%">Contact No</th>
+                    <th style="width: 14%">Current Address</th>
+                    <th style="width: 14%">Permanent Address</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="employeeFamilyInfos">
+                  <tr *ngFor="let fam of family.controls; let i = index" [formGroupName]="i">
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="idRelationship">
+                        <option ngValue="">Select</option>
+                        <option *ngFor="let r of relationships()" [ngValue]="r.id">
+                          {{ r.name }}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" placeholder="Name" formControlName="name">
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="idGender">
+                        <option ngValue="">Select</option>
+                        <option *ngFor="let g of genders()" [ngValue]="g.id">
+                          {{ g.name }}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="date" class="form-control form-control-sm" formControlName="dateOfBirth">
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" placeholder="Contact No" formControlName="contactNo">
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" placeholder="Current Address"
+                        formControlName="currentAddress">
+                    </td>
+                    <td>
+                      <input class="form-control form-control-sm" placeholder="Permanent Address"
+                        formControlName="permanentAddress">
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+       
           <!-- ================= EMPLOYEE DOCUMENTS ================= -->
           <div class="card mb-3 col-md-6">
             <div class="card-header fw-bold d-flex justify-content-between align-items-center">
@@ -399,14 +404,7 @@
               </table>
             </div>
           </div>
-        </div>
-        <!-- ================= ACTION ================= -->
-        <div class="text-end mb-3">
-          <button type="button" class="btn btn-primary" (click)="submit()" [disabled]="isSaving()">
-            Save Employee
-          </button>
-        </div>
-
+        </div>     
       </form>
 
     </div>
