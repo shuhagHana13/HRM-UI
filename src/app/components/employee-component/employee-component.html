@@ -160,13 +160,9 @@
 
             <!-- Image Upload -->
             <input type="file" class="form-control mb-2" accept="image/*" (change)="onImageSelect($event)" />
-
-            <!-- Image Preview -->
             <img *ngIf="employeeImagePreview()" [src]="employeeImagePreview()" class="img-thumbnail"
               style="max-height: 120px; width: 100%; object-fit: cover;" alt="Employee Image Preview" />
           </div>
-
-
 
           <div class="col-md-6 d-flex align-items-center gap-3">
             <div class="form-check">
@@ -183,7 +179,6 @@
             </div>
           </div>
         </div>
-
 
         <div class="row mt-5">
           <!-- ================= EDUCATION ================= -->
@@ -204,6 +199,7 @@
                     <th style="width: 20%">Major</th>
                     <th style="width: 20%">Institute</th>
                     <th style="width: 12%">Year / CGPA</th>
+                    <th style="width: 12%">Actions</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="employeeEducationInfos">
@@ -246,6 +242,16 @@
                           style="width: 50%;">
                       </div>
                     </td>
+                    
+                  <td class="text-center">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="removeEducationRow(i)">
+                        ✕
+                      </button>
+                    </td>
+
                   </tr>
                 </tbody>
               </table>
@@ -268,6 +274,7 @@
                     <th style="width: 18%">Location</th>
                     <th style="width: 15%">From Date</th>
                     <th style="width: 15%">To Date</th>
+                    <th style="width: 8%">Actions</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="employeeProfessionalCertifications">
@@ -290,6 +297,16 @@
                     <td>
                       <input type="date" class="form-control form-control-sm" formControlName="toDate">
                     </td>
+                    
+                    <td class="text-center">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-danger"
+                          (click)="removeCertificationRow(i)">
+                          ✕
+                        </button>
+                      </td>
+
                   </tr>
                 </tbody>
               </table>
@@ -297,7 +314,7 @@
           </div>
 
           <!-- ================= FAMILY INFORMATION ================= -->
-          <div class="card mb-3 col-md-6">
+          <div class="card mb-3 col-md-12">
             <div class="card-header fw-bold d-flex justify-content-between align-items-center">
               Family Information
               <button type="button" class="btn btn-sm btn-outline-primary" (click)="addFamily()">
@@ -316,6 +333,7 @@
                     <th style="width: 14%">Contact No</th>
                     <th style="width: 14%">Current Address</th>
                     <th style="width: 14%">Permanent Address</th>
+                    <th style="width: 8%">Actions</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="employeeFamilyInfos">
@@ -353,15 +371,24 @@
                       <input class="form-control form-control-sm" placeholder="Permanent Address"
                         formControlName="permanentAddress">
                     </td>
+                    
+                  <td class="text-center">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="removeFamilyRow(i)">
+                        ✕
+                      </button>
+                    </td>
+
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
-
        
           <!-- ================= EMPLOYEE DOCUMENTS ================= -->
-          <div class="card mb-3 col-md-6">
+          <div class="card mb-3 col-md-12">
             <div class="card-header fw-bold d-flex justify-content-between align-items-center">
               Employee Documents
               <button type="button" class="btn btn-sm btn-outline-primary" (click)="addDocument()">
@@ -377,6 +404,7 @@
                     <th style="width: 16%">File Name</th>
                     <th style="width: 16%">Upload Date</th>
                     <th style="width: 12%">Extension</th>
+                    <th style="width: 12%">Actions</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="employeeDocuments">
@@ -399,6 +427,16 @@
                     <td>
                       <input class="form-control form-control-sm" formControlName="uploadedFileExtention" readonly>
                     </td>
+                    
+                  <td class="text-center">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      (click)="removeDocumentRow(i)"
+                      title="Remove Row">
+                      ✕
+                    </button>
+                  </td>
                   </tr>
                 </tbody>
               </table>

@@ -450,6 +450,16 @@ deleteEmployee(): void {
 cancelEdit(): void {
   this.resetForm();
 }
-
-
+  removeEducationRow(index: number): void {
+    this.education.removeAt(index);
+}
+removeCertificationRow(index: number): void {
+  this.certifications.removeAt(index);
+}
+removeFamilyRow(index: number): void {
+  this.family.removeAt(index);
+}
+removeDocumentRow(index: number): void {
+  this.employeeDocuments.removeAt(index);
+}
 }
