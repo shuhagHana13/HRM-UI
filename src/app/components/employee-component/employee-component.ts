@@ -136,17 +136,14 @@ export class EmployeeComponent implements OnInit {
 
     reader.onload = () => {
       const base64 = reader.result as string;
+
       this.employeeImagePreview.set(base64);
 
-      const byteString = atob(base64.split(',')[1]);
-      const byteArray = new Uint8Array(byteString.length);
-
-      for (let i = 0; i < byteString.length; i++) {
-        byteArray[i] = byteString.charCodeAt(i);
-      }
+      // ✅ send ONLY base64 string (without prefix)
+      const pureBase64 = base64.split(',')[1];
 
       this.employeeForm.patchValue({
-        employeeImage: Array.from(byteArray)
+        employeeImage: pureBase64
       });
     };
 
@@ -156,25 +153,28 @@ export class EmployeeComponent implements OnInit {
   onDocumentSelect(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
+
     const file = input.files[0];
     const reader = new FileReader();
+
     reader.onload = () => {
       const base64 = reader.result as string;
-      const byteString = atob(base64.split(',')[1]);
-      const byteArray = new Uint8Array(byteString.length);
-      for (let i = 0; i < byteString.length; i++) {
-        byteArray[i] = byteString.charCodeAt(i);
-      }
+
+      // ✅ extract pure base64
+      const pureBase64 = base64.split(',')[1];
+
       this.employeeDocuments.at(index).patchValue({
         fileName: file.name,
         uploadedFileExtention: file.name.substring(file.name.lastIndexOf('.')),
         uploadDate: new Date().toISOString().substring(0, 10),
-        uploadedFile: Array.from(byteArray)
+        uploadedFile: pureBase64   // ✅ FIXED
       });
     };
 
     reader.readAsDataURL(file);
   }
+
+
   // ===== FORM ARRAYS =====
   get education(): FormArray {
     return this.employeeForm.get('employeeEducationInfos') as FormArray;
@@ -272,42 +272,64 @@ export class EmployeeComponent implements OnInit {
 
   // ===== SUBMIT =====
   submit(): void {
-  if (this.employeeForm.invalid) return;
+    if (this.employeeForm.invalid) return;
 
-  let payload = { ...this.employeeForm.value };
+    let payload = { ...this.employeeForm.value };
 
-  // ✅ employeeImage fix
-  if (!payload.employeeImage || payload.employeeImage.length === 0) {
-    payload.employeeImage = null;
+    // ✅ ALWAYS enforce idClient
+    payload.idClient = this.idClient();
+
+    // ✅ Fix nested arrays
+    payload.employeeEducationInfos?.forEach((e: any) => e.idClient = this.idClient());
+    payload.employeeFamilyInfos?.forEach((f: any) => f.idClient = this.idClient());
+    payload.employeeProfessionalCertifications?.forEach((c: any) => c.idClient = this.idClient());
+    payload.employeeDocuments?.forEach((d: any) => d.idClient = this.idClient());
+
+    // ✅ employeeImage fix
+    if (!payload.employeeImage || payload.employeeImage.length === 0) {
+      payload.employeeImage = null;
+    }
+
+    this.isSaving.set(true);
+
+    const request$ = this.isEditMode()
+      ? this.employeeService.updateEmployee(this.selectedEmployeeId()!, payload)
+      : this.employeeService.createEmployee(payload);
+
+    request$
+      .pipe(finalize(() => this.isSaving.set(false)))
+      .subscribe({
+        next: () => {
+          alert(this.isEditMode() ? 'Employee updated successfully' : 'Employee created successfully');
+          this.resetForm();
+          this.loadEmployees();
+        },
+        error: err => console.error(err)
+      });
   }
 
-  this.isSaving.set(true);
+  resetForm(): void {
+    this.employeeForm.reset();
 
-  // ✅ CREATE vs UPDATE decision
-  const request$ = this.isEditMode()
-    ? this.employeeService.updateEmployee(
-        this.selectedEmployeeId()!,   // 👈 existing employeeId
-        payload
-      )
-    : this.employeeService.createEmployee(payload);
-
-  request$
-    .pipe(finalize(() => this.isSaving.set(false)))
-    .subscribe({
-      next: () => {
-        alert(this.isEditMode() ? 'Employee updated successfully' : 'Employee created successfully');
-        this.resetForm();
-        this.loadEmployees();
-      },
-      error: err => console.error(err)
+    // ✅ PATCH again AFTER reset
+    this.employeeForm.patchValue({
+      id: 0,
+      idClient: this.idClient(),
+      hasOvertime: false,
+      hasAttendenceBonus: false,
+      isActive: false
     });
-}
 
-resetForm(): void {
-  this.employeeForm.reset();
-  this.isEditMode.set(false);
-  this.selectedEmployeeId.set(null);
-}
+    // clear arrays
+    this.education.clear();
+    this.family.clear();
+    this.certifications.clear();
+    this.employeeDocuments.clear();
+
+    this.employeeImagePreview.set(null);
+    this.isEditMode.set(false);
+    this.selectedEmployeeId.set(null);
+  }
 
 
   //Edit operation
@@ -318,148 +340,155 @@ resetForm(): void {
     this.loadEmployeeById(employeeId);
   }
 
-  
-loadEmployeeById(employeeId: number): void {
-  this.isLoading.set(true);
 
-  this.employeeService
-    .getEmployeeById(this.idClient(), employeeId)
-    .pipe(finalize(() => this.isLoading.set(false)))
-    .subscribe(emp => {
-      this.populateForm(emp);
+  loadEmployeeById(employeeId: number): void {
+    this.isLoading.set(true);
+
+    this.employeeService
+      .getEmployeeById(this.idClient(), employeeId)
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe(emp => {
+        this.populateForm(emp);
+      });
+  }
+  populateForm(emp: EmployeeDto): void {
+
+    // ---------- MAIN FORM ----------
+
+    this.employeeForm.patchValue({
+      id: emp.id,
+      idClient: emp.idClient,
+      employeeName: emp.employeeName,
+      employeeNameBangla: emp.employeeNameBangla,
+      fatherName: emp.fatherName,
+      motherName: emp.motherName,
+      birthDate: emp.birthDate,
+      joiningDate: emp.joiningDate,
+      contactNo: emp.contactNo,
+      nationalIdentificationNumber: emp.nationalIdentificationNumber,
+      address: emp.address,
+      presentAddress: emp.presentAddress,
+      idGender: emp.idGender,
+      idReligion: emp.idReligion,
+      idJobType: emp.idJobType,
+      idEmployeeType: emp.idEmployeeType,
+      idDepartment: emp.idDepartment,
+      idSection: emp.idSection,
+      idDesignation: emp.idDesignation,
+      idReportingManager: emp.idReportingManager,
+      idMaritalStatus: emp.idMaritalStatus,
+      idWeekOff: emp.idWeekOff,
+      hasOvertime: emp.hasOvertime,
+      hasAttendenceBonus: emp.hasAttendenceBonus,
+      isActive: emp.isActive,
+      employeeImage: emp.employeeImage ?? null
     });
-}
-populateForm(emp: EmployeeDto): void {
-
-  // ---------- MAIN FORM ----------
- 
-this.employeeForm.patchValue({
-  id: emp.id,
-  idClient: emp.idClient,
-  employeeName: emp.employeeName,
-  employeeNameBangla: emp.employeeNameBangla,
-  fatherName: emp.fatherName,
-  motherName: emp.motherName,
-  birthDate: emp.birthDate,
-  joiningDate: emp.joiningDate,
-  contactNo: emp.contactNo,
-  nationalIdentificationNumber: emp.nationalIdentificationNumber,
-  address: emp.address,
-  presentAddress: emp.presentAddress,
-  idGender: emp.idGender,
-  idReligion: emp.idReligion,
-  idJobType: emp.idJobType,
-  idEmployeeType: emp.idEmployeeType,
-  idDepartment: emp.idDepartment,
-  idSection: emp.idSection,
-  idDesignation: emp.idDesignation,
-  idReportingManager: emp.idReportingManager,
-  idMaritalStatus: emp.idMaritalStatus,
-  idWeekOff: emp.idWeekOff,
-  hasOvertime: emp.hasOvertime,
-  hasAttendenceBonus: emp.hasAttendenceBonus,
-  isActive: emp.isActive,
-  employeeImage: emp.employeeImage ?? null
-});
+    if (emp.employeeImage) {
+      this.employeeImagePreview.set(
+        'data:image/png;base64,' + emp.employeeImage
+      );
+    } else {
+      this.employeeImagePreview.set(null);
+    }
 
 
-  // ---------- EDUCATION ----------
-  this.education.clear();
-  emp.employeeEducationInfos?.forEach(e => {
-    this.education.push(this.fb.group({
-      idClient: emp.idClient,
-      idEducationLevel: e.idEducationLevel,
-      idEducationExamination: e.idEducationExamination,
-      idEducationResult: e.idEducationResult,
-      major: e.major,
-      passingYear: e.passingYear,
-      instituteName: e.instituteName,
-      cgpa: e.cgpa
-    }));
-  });
-
-  // ---------- FAMILY ----------
-  this.family.clear();
-  emp.employeeFamilyInfos?.forEach(f => {
-    this.family.push(this.fb.group({
-      idClient: emp.idClient,
-      id: f.id,
-      name: f.name,
-      idGender: f.idGender,
-      idRelationship: f.idRelationship,
-      dateOfBirth: f.dateOfBirth,
-      contactNo: f.contactNo,
-      currentAddress: f.currentAddress,
-      permanentAddress: f.permanentAddress
-    }));
-  });
-
-  // ---------- CERTIFICATIONS ----------
-  this.certifications.clear();
-  emp.employeeProfessionalCertifications?.forEach(c => {
-    this.certifications.push(this.fb.group({
-      idClient: emp.idClient,
-      id: c.id,
-      certificationTitle: c.certificationTitle,
-      certificationInstitute: c.certificationInstitute,
-      instituteLocation: c.instituteLocation,
-      fromDate: c.fromDate,
-      toDate: c.toDate
-    }));
-  });
-
-  // ---------- DOCUMENTS ----------
-  this.employeeDocuments.clear();
-  emp.employeeDocuments?.forEach(d => {
-    this.employeeDocuments.push(this.fb.group({
-      idClient: emp.idClient,
-      id: d.id,
-      documentName: d.documentName,
-      fileName: d.fileName,
-      uploadDate: d.uploadDate,
-      uploadedFileExtention: d.uploadedFileExtention,
-      uploadedFile: null // file reselect required
-    }));
-  });
-}
-
-deleteEmployee(): void {
-  if (!this.selectedEmployeeId()) return;
-
-  const confirmed = confirm('Are you sure you want to delete this employee?');
-  if (!confirmed) return;
-
-  this.isSaving.set(true);
-
-  this.employeeService
-    .softDeleteEmployee(this.idClient(), this.selectedEmployeeId()!)
-    .pipe(finalize(() => this.isSaving.set(false)))
-    .subscribe({
-      next: res => {
-        alert(res.message || 'Employee deleted successfully');
-        this.resetForm();
-        this.loadEmployees();
-      },
-      error: err => {
-        console.error('Delete failed', err);
-        alert('Failed to delete employee');
-      }
+    // ---------- EDUCATION ----------
+    this.education.clear();
+    emp.employeeEducationInfos?.forEach(e => {
+      this.education.push(this.fb.group({
+        idClient: emp.idClient,
+        idEducationLevel: e.idEducationLevel,
+        idEducationExamination: e.idEducationExamination,
+        idEducationResult: e.idEducationResult,
+        major: e.major,
+        passingYear: e.passingYear,
+        instituteName: e.instituteName,
+        cgpa: e.cgpa
+      }));
     });
-}
 
-cancelEdit(): void {
-  this.resetForm();
-}
+    // ---------- FAMILY ----------
+    this.family.clear();
+    emp.employeeFamilyInfos?.forEach(f => {
+      this.family.push(this.fb.group({
+        idClient: emp.idClient,
+        id: f.id,
+        name: f.name,
+        idGender: f.idGender,
+        idRelationship: f.idRelationship,
+        dateOfBirth: f.dateOfBirth,
+        contactNo: f.contactNo,
+        currentAddress: f.currentAddress,
+        permanentAddress: f.permanentAddress
+      }));
+    });
+
+    // ---------- CERTIFICATIONS ----------
+    this.certifications.clear();
+    emp.employeeProfessionalCertifications?.forEach(c => {
+      this.certifications.push(this.fb.group({
+        idClient: emp.idClient,
+        id: c.id,
+        certificationTitle: c.certificationTitle,
+        certificationInstitute: c.certificationInstitute,
+        instituteLocation: c.instituteLocation,
+        fromDate: c.fromDate,
+        toDate: c.toDate
+      }));
+    });
+
+    // ---------- DOCUMENTS ----------
+    this.employeeDocuments.clear();
+    emp.employeeDocuments?.forEach(d => {
+      this.employeeDocuments.push(this.fb.group({
+        idClient: emp.idClient,
+        id: d.id,
+        documentName: d.documentName,
+        fileName: d.fileName,
+        uploadDate: d.uploadDate,
+        uploadedFileExtention: d.uploadedFileExtention,
+        uploadedFile: null // file reselect required
+      }));
+    });
+  }
+
+  deleteEmployee(): void {
+    if (!this.selectedEmployeeId()) return;
+
+    const confirmed = confirm('Are you sure you want to delete this employee?');
+    if (!confirmed) return;
+
+    this.isSaving.set(true);
+
+    this.employeeService
+      .softDeleteEmployee(this.idClient(), this.selectedEmployeeId()!)
+      .pipe(finalize(() => this.isSaving.set(false)))
+      .subscribe({
+        next: res => {
+          alert(res.message || 'Employee deleted successfully');
+          this.resetForm();
+          this.loadEmployees();
+        },
+        error: err => {
+          console.error('Delete failed', err);
+          alert('Failed to delete employee');
+        }
+      });
+  }
+
+  cancelEdit(): void {
+    this.resetForm();
+  }
   removeEducationRow(index: number): void {
     this.education.removeAt(index);
-}
-removeCertificationRow(index: number): void {
-  this.certifications.removeAt(index);
-}
-removeFamilyRow(index: number): void {
-  this.family.removeAt(index);
-}
-removeDocumentRow(index: number): void {
-  this.employeeDocuments.removeAt(index);
-}
+  }
+  removeCertificationRow(index: number): void {
+    this.certifications.removeAt(index);
+  }
+  removeFamilyRow(index: number): void {
+    this.family.removeAt(index);
+  }
+  removeDocumentRow(index: number): void {
+    this.employeeDocuments.removeAt(index);
+  }
 }
