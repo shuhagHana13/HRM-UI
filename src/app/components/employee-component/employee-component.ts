@@ -7,7 +7,8 @@ import { CommonModule } from '@angular/common';
 import { EmployeeListDto } from '../../models/employeeList.model';
 import { finalize } from 'rxjs';
 import { EmployeeDto } from '../../models/employee.model';
-
+import { dateRangeValidator, duplicateEducationValidator, passingYearValidator } from '../../validators/custom-validators';
+type UiMode = 'INITIAL' | 'ADD' | 'VIEW' | 'EDIT';
 @Component({
   selector: 'app-employee-component',
   imports: [CommonModule, ReactiveFormsModule],
@@ -15,7 +16,6 @@ import { EmployeeDto } from '../../models/employee.model';
   styleUrl: './employee-component.css',
 })
 export class EmployeeComponent implements OnInit {
-
 
   employeeForm!: FormGroup;
   idClient = signal<number>(10001001);
@@ -25,9 +25,8 @@ export class EmployeeComponent implements OnInit {
   employeeImagePreview = signal<string | null>(null);
   isEditMode = signal<boolean>(false);
   selectedEmployeeId = signal<number | null>(null);
+  uiMode = signal<UiMode>('INITIAL');
 
-
-  //  DROPDOWNS
   genders = signal<CommonDropdownDto[]>([]);
   religions = signal<CommonDropdownDto[]>([]);
   jobTypes = signal<CommonDropdownDto[]>([]);
@@ -43,8 +42,6 @@ export class EmployeeComponent implements OnInit {
   educationExams = signal<CommonDropdownDto[]>([]);
   educationResults = signal<CommonDropdownDto[]>([]);
 
-
-
   constructor(private commonService: CommonService,
     private employeeService: EmployeeService,
     private fb: FormBuilder) { }
@@ -53,12 +50,35 @@ export class EmployeeComponent implements OnInit {
     this.loadEmployees();
     this.initForm();
     this.loadDropdowns();
+    this.updateFormState();
+    this.uiMode.set('INITIAL');
+  }
+
+  updateFormState(): void {
+    if (this.uiMode() === 'INITIAL' || this.uiMode() === 'VIEW') {
+      this.employeeForm.disable({ emitEvent: false });
+    } else {
+      this.employeeForm.enable({ emitEvent: false });
+    }
+  }
+
+
+  startAdd(): void {
+    this.resetForm();
+    this.uiMode.set('ADD');
+    this.employeeForm.enable();
+    this.employeeForm.markAllAsTouched();
+    this.updateFormState();
+  }
+
+  startEdit(): void {
+    this.uiMode.set('EDIT');
+    this.updateFormState();
   }
 
 
   filteredEmployeeList = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
-
     if (!term) {
       return this.employeeList();
     }
@@ -89,28 +109,28 @@ export class EmployeeComponent implements OnInit {
       });
   }
 
-  // ================= FORM BUILD =================
+
   initForm(): void {
     this.employeeForm = this.fb.group({
-      id: [0],   // MUST for update operation, will be patched in edit mode
-      idClient: [this.idClient()],
-      employeeName: ['', Validators.required],
+      id: [0],
+      idClient: [this.idClient(), Validators.required],
+      employeeName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(250)]],
       employeeNameBangla: [''],
       fatherName: [''],
       motherName: [''],
       birthDate: [''],
       joiningDate: [''],
-      contactNo: [''],
+      contactNo: ['',],
       nationalIdentificationNumber: [''],
-      address: [''],
+      address: ['', Validators.maxLength(250)],
       presentAddress: [''],
       employeeImage: [null],
       idGender: [null],
       idReligion: [null],
       idJobType: [null],
       idEmployeeType: [null],
-      idDepartment: [null],
-      idSection: [null],
+      idDepartment: [null,Validators.required],
+      idSection: [null, Validators.required],
       idDesignation: [null],
       idReportingManager: [null],
       idMaritalStatus: [null],
@@ -126,48 +146,40 @@ export class EmployeeComponent implements OnInit {
     });
   }
 
-
   onImageSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
-
     const file = input.files[0];
     const reader = new FileReader();
-
     reader.onload = () => {
       const base64 = reader.result as string;
-
       this.employeeImagePreview.set(base64);
-
-      // ✅ send ONLY base64 string (without prefix)
+      // send ONLY base64 string (without prefix)
       const pureBase64 = base64.split(',')[1];
-
       this.employeeForm.patchValue({
         employeeImage: pureBase64
       });
     };
-
     reader.readAsDataURL(file);
   }
+
 
   onDocumentSelect(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
-
     const file = input.files[0];
     const reader = new FileReader();
-
     reader.onload = () => {
       const base64 = reader.result as string;
 
-      // ✅ extract pure base64
+      //extract pure base64
       const pureBase64 = base64.split(',')[1];
 
       this.employeeDocuments.at(index).patchValue({
         fileName: file.name,
         uploadedFileExtention: file.name.substring(file.name.lastIndexOf('.')),
         uploadDate: new Date().toISOString().substring(0, 10),
-        uploadedFile: pureBase64   // ✅ FIXED
+        uploadedFile: pureBase64  
       });
     };
 
@@ -175,7 +187,6 @@ export class EmployeeComponent implements OnInit {
   }
 
 
-  // ===== FORM ARRAYS =====
   get education(): FormArray {
     return this.employeeForm.get('employeeEducationInfos') as FormArray;
   }
@@ -192,66 +203,80 @@ export class EmployeeComponent implements OnInit {
     return this.employeeForm.get('employeeDocuments') as FormArray;
   }
 
-  // add row
+
   addEducation() {
-    this.education.push(this.fb.group({
-      idClient: [this.idClient()],
-      idEducationLevel: [null],
-      idEducationExamination: [null],
-      idEducationResult: [null],
-      major: [''],
-      passingYear: [''],
-      instituteName: [''],
-      cgpa: ['']
-    }));
-  }
+  const group = this.fb.group({
+    idClient: [this.idClient(), Validators.required],
+    idEducationLevel: [null, Validators.required],
+    idEducationExamination: [null, Validators.required],
+    idEducationResult: [null, Validators.required],
+    major: ['', [Validators.required, Validators.maxLength(50)]],
+    passingYear: ['', [Validators.pattern(/^\d{4}$/), passingYearValidator('birthDate')]],
+    instituteName: ['', [Validators.required, Validators.maxLength(250)]],
+    cgpa: ['']
+  });
 
-  // add row
+  this.education.push(group);
+
+  group.markAllAsTouched();
+}
+
+
   addDocument() {
-    this.employeeDocuments.push(
-      this.fb.group({
-        idClient: [this.idClient()],
-        id: [0],
-        documentName: [''],
-        fileName: [''],
-        uploadDate: [''],
-        uploadedFileExtention: [''],
-        uploadedFile: [null]
-      })
-    );
-  }
+  const group = this.fb.group({
+    idClient: [this.idClient(), Validators.required],
+    id: [0],
+    documentName: ['', Validators.required],
+    fileName: ['', Validators.required],
+    uploadDate: ['', Validators.required],
+    uploadedFileExtention: ['', Validators.maxLength(10)],
+    uploadedFile: [null, Validators.required]
+  });
+  this.employeeDocuments.push(group);
 
-  // add row
+  group.markAllAsTouched();
+}
+
+
   addFamily() {
-    this.family.push(this.fb.group({
-      idClient: [this.idClient()],
-      id: [0],
-      name: [''],
-      idGender: [null],
-      idRelationship: [null],
-      dateOfBirth: [''],
-      contactNo: [''],
-      currentAddress: [''],
-      permanentAddress: ['']
-    }));
-  }
+  const group = this.fb.group({
+    idClient: [this.idClient(), Validators.required],
+    id: [0],
+    name: ['', Validators.required],
+    idGender: [null, Validators.required],
+    idRelationship: [null, Validators.required],
+    dateOfBirth: [''],
+    contactNo: ['', Validators.pattern(/^(01)[0-9]{9}$/)],
+    currentAddress: ['', Validators.maxLength(500)],
+    permanentAddress: ['', Validators.maxLength(500)]
+  });
 
-  // add row
-  addCertification() {
-    this.certifications.push(
-      this.fb.group({
-        idClient: [this.idClient()],
-        id: [0],
-        certificationTitle: [''],
-        certificationInstitute: [''],
-        instituteLocation: [''],
-        fromDate: [''],
-        toDate: ['']
-      })
-    );
-  }
+  this.family.push(group);
 
-  // DROPDOWNS load
+
+  group.markAllAsTouched();
+}
+
+ addCertification() {
+  const group = this.fb.group({
+    idClient: [this.idClient(), Validators.required],
+    id: [0],
+    certificationTitle: ['', Validators.required],
+    certificationInstitute: ['', Validators.required],
+    instituteLocation: ['', Validators.maxLength(250)],
+    fromDate: ['', Validators.required],
+    toDate: ['', Validators.required]
+  }, {
+    validators: dateRangeValidator('fromDate', 'toDate')
+  });
+
+  this.certifications.push(group);
+
+  group.markAllAsTouched();
+}
+
+
+
   loadDropdowns() {
     this.commonService.getGenders(this.idClient()).subscribe(r => this.genders.set(r));
     this.commonService.getReligions(this.idClient()).subscribe(r => this.religions.set(r));
@@ -267,32 +292,35 @@ export class EmployeeComponent implements OnInit {
     this.commonService.getRelationships(this.idClient()).subscribe(res => this.relationships.set(res));
     this.commonService.getDepartments(this.idClient()).subscribe(res => this.departments.set(res));
 
-
   }
 
-  // ===== SUBMIT =====
+
   submit(): void {
-    if (this.employeeForm.invalid) return;
+    if (this.employeeForm.invalid) {
+       console.log('Save clicked')
+      this.employeeForm.markAllAsTouched();
+       alert('Form is invalid');
+      return;
+    }
 
     let payload = { ...this.employeeForm.value };
 
-    // ✅ ALWAYS enforce idClient
+    // ALWAYS enforce idClient
     payload.idClient = this.idClient();
 
-    // ✅ Fix nested arrays
+    // Fix nested arrays
     payload.employeeEducationInfos?.forEach((e: any) => e.idClient = this.idClient());
     payload.employeeFamilyInfos?.forEach((f: any) => f.idClient = this.idClient());
     payload.employeeProfessionalCertifications?.forEach((c: any) => c.idClient = this.idClient());
     payload.employeeDocuments?.forEach((d: any) => d.idClient = this.idClient());
 
-    // ✅ employeeImage fix
+    // employeeImage fix
     if (!payload.employeeImage || payload.employeeImage.length === 0) {
       payload.employeeImage = null;
     }
 
     this.isSaving.set(true);
-
-    const request$ = this.isEditMode()
+    const request$ = this.uiMode() === 'EDIT'
       ? this.employeeService.updateEmployee(this.selectedEmployeeId()!, payload)
       : this.employeeService.createEmployee(payload);
 
@@ -311,7 +339,7 @@ export class EmployeeComponent implements OnInit {
   resetForm(): void {
     this.employeeForm.reset();
 
-    // ✅ PATCH again AFTER reset
+    // PATCH again AFTER reset
     this.employeeForm.patchValue({
       id: 0,
       idClient: this.idClient(),
@@ -331,19 +359,23 @@ export class EmployeeComponent implements OnInit {
     this.selectedEmployeeId.set(null);
   }
 
+  cancelEdit(): void {
+    this.resetForm();
+    this.uiMode.set('INITIAL');
+    this.updateFormState();
 
-  //Edit operation
+  }
+
   onEmployeeClick(employeeId: number): void {
     this.isEditMode.set(true);
     this.selectedEmployeeId.set(employeeId);
-
+    this.uiMode.set('VIEW');
     this.loadEmployeeById(employeeId);
   }
 
 
   loadEmployeeById(employeeId: number): void {
     this.isLoading.set(true);
-
     this.employeeService
       .getEmployeeById(this.idClient(), employeeId)
       .pipe(finalize(() => this.isLoading.set(false)))
@@ -351,10 +383,30 @@ export class EmployeeComponent implements OnInit {
         this.populateForm(emp);
       });
   }
+
+
+  onImageWheel(event: WheelEvent): void {
+  event.preventDefault();
+
+  const img = event.target as HTMLImageElement;
+  if (!img || !img.classList.contains('employee-image-preview')) {
+    return;
+  }
+
+  const zoomFactor = event.deltaY < 0 ? 1.1 : 0.9;
+
+  const currentScale =
+    img.style.transform.match(/scale\(([^)]+)\)/)?.[1] ?? '1';
+
+  let newScale = +currentScale * zoomFactor;
+  newScale = Math.min(Math.max(newScale, 1), 3); // clamp
+
+  img.style.transform = `scale(${newScale})`;
+}
+
   populateForm(emp: EmployeeDto): void {
 
     // ---------- MAIN FORM ----------
-
     this.employeeForm.patchValue({
       id: emp.id,
       idClient: emp.idClient,
@@ -383,6 +435,7 @@ export class EmployeeComponent implements OnInit {
       isActive: emp.isActive,
       employeeImage: emp.employeeImage ?? null
     });
+
     if (emp.employeeImage) {
       this.employeeImagePreview.set(
         'data:image/png;base64,' + emp.employeeImage
@@ -450,6 +503,10 @@ export class EmployeeComponent implements OnInit {
         uploadedFile: null // file reselect required
       }));
     });
+
+    this.uiMode.set('VIEW');
+    this.updateFormState();
+
   }
 
   deleteEmployee(): void {
@@ -476,19 +533,21 @@ export class EmployeeComponent implements OnInit {
       });
   }
 
-  cancelEdit(): void {
-    this.resetForm();
-  }
+
   removeEducationRow(index: number): void {
     this.education.removeAt(index);
   }
+
   removeCertificationRow(index: number): void {
     this.certifications.removeAt(index);
   }
+
   removeFamilyRow(index: number): void {
     this.family.removeAt(index);
   }
+
   removeDocumentRow(index: number): void {
     this.employeeDocuments.removeAt(index);
   }
+
 }

@@ -13,12 +13,14 @@
 }
 
 /* RIGHT CONTENT */
+
 .employee-content {
   height: 100vh;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* keep this */
 }
+
 
 /* FIXED HEADER */
 .employee-header {
@@ -31,10 +33,11 @@
 }
 
 /* SCROLLABLE BODY */
+
 .employee-body {
   flex: 1;
-  overflow-y: auto;
-  padding-top: 15px;
+  overflow-y: auto;   
+  padding-bottom: 20px;
 }
 
 .employee-sidebar-header {
@@ -44,4 +47,37 @@
   z-index: 10;
   padding: 12px 0;
   border-bottom: 1px solid #ddd;
+}
+
+/* Image preview container */
+.image-preview-wrapper {
+  width: 100%;
+  height: 140px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #f8f9fa;
+  cursor: zoom-in;
+  position: relative;
+}
+
+/* Image itself */
+.employee-image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;            /* ✅ FACE CUT FIX */
+  transition: transform 0.3s ease;
+  transform-origin: center center;
+}
+
+/* Hover zoom */
+.image-preview-wrapper:hover .employee-image-preview {
+  transform: scale(1.6);
+  cursor: zoom-out;
+}
+
+/* Disabled file input visual */
+input[type="file"]:disabled {
+  cursor: not-allowed;
+  background-color: #f1f1f1;
 }
