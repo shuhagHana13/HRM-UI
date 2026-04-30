@@ -14,7 +14,9 @@
         <div class="card employee-card mb-1" [class.disabled]="uiMode() === 'ADD' || uiMode() === 'EDIT'"
           (click)="onEmployeeClick(emp.employeeId)" *ngFor="let emp of filteredEmployeeList()" style="cursor: pointer">
           <div class="card-body">
-            <p># {{ emp.employeeId }} {{ emp.employeeName }}, {{ emp.designationName }}</p>
+            <p>Id: {{ emp.employeeId }} </p>
+            <p> Name: {{ emp.employeeName }} </p>
+             <p> Designation: {{ emp.designationName }}</p>
           </div>
         </div>
 
@@ -251,10 +253,10 @@
                 <input class="form-check-input" type="checkbox" formControlName="hasAttendenceBonus">
                 <label class="form-check-label">Attendance Bonus</label>
               </div>
-              <div class="form-check">
+              <!-- <div class="form-check">
                 <input class="form-check-input" type="checkbox" formControlName="isActive">
                 <label class="form-check-label">Active</label>
-              </div>
+              </div> -->
             </div>
           </div>
 

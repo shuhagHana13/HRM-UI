@@ -69,6 +69,7 @@ export class EmployeeComponent implements OnInit {
     this.employeeForm.enable();
     this.employeeForm.markAllAsTouched();
     this.updateFormState();
+    
   }
 
   startEdit(): void {
@@ -306,18 +307,12 @@ export class EmployeeComponent implements OnInit {
       console.log('Form invalid');
       console.log('Form errors:', this.employeeForm.errors);
       console.log('Form value (raw):', this.employeeForm.getRawValue());
-
       alert('Form is invalid');
       return;
     }
 
-    // ✅ MUST USE getRawValue()
     const payload = this.employeeForm.getRawValue();
-
-    // enforce idClient
     payload.idClient = this.idClient();
-
-    // Fix nested arrays
     payload.employeeEducationInfos?.forEach((e: any) => {
       e.idClient = this.idClient();
       if (!e.id) e.id = 0;
@@ -338,20 +333,15 @@ export class EmployeeComponent implements OnInit {
       if (!d.id) d.id = 0;
     });
 
-    // employeeImage fix
     if (!payload.employeeImage || payload.employeeImage.length === 0) {
       payload.employeeImage = null;
     }
-
     console.log('FINAL PAYLOAD:', payload);
-
     this.isSaving.set(true);
-
     const request$ =
       this.uiMode() === 'EDIT'
         ? this.employeeService.updateEmployee(this.selectedEmployeeId()!, payload)
         : this.employeeService.createEmployee(payload);
-
     request$
       .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
@@ -406,7 +396,6 @@ export class EmployeeComponent implements OnInit {
     if (this.uiMode() === 'ADD' || this.uiMode() === 'EDIT') {
       return;
     }
-
     this.uiMode.set('VIEW');
     this.selectedEmployeeId.set(employeeId);
     this.loadEmployeeById(employeeId);
@@ -454,8 +443,8 @@ export class EmployeeComponent implements OnInit {
       employeeNameBangla: emp.employeeNameBangla,
       fatherName: emp.fatherName,
       motherName: emp.motherName,
-      birthDate: emp.birthDate,
-      joiningDate: emp.joiningDate,
+      birthDate:emp.birthDate? new Date(emp.birthDate).toISOString().substring(0, 10): null,
+      joiningDate: emp.joiningDate? new Date(emp.joiningDate).toISOString().substring(0, 10): null,
       contactNo: emp.contactNo,
       nationalIdentificationNumber: emp.nationalIdentificationNumber,
       address: emp.address,
@@ -509,7 +498,7 @@ export class EmployeeComponent implements OnInit {
         name: f.name,
         idGender: f.idGender,
         idRelationship: f.idRelationship,
-        dateOfBirth: f.dateOfBirth,
+        dateOfBirth: f.dateOfBirth? new Date(f.dateOfBirth).toISOString().substring(0, 10): null,
         contactNo: f.contactNo,
         currentAddress: f.currentAddress,
         permanentAddress: f.permanentAddress
@@ -525,8 +514,8 @@ export class EmployeeComponent implements OnInit {
         certificationTitle: c.certificationTitle,
         certificationInstitute: c.certificationInstitute,
         instituteLocation: c.instituteLocation,
-        fromDate: c.fromDate,
-        toDate: c.toDate
+        fromDate: c.fromDate? new Date(c.fromDate).toISOString().substring(0, 10): null,
+        toDate: c.toDate? new Date(c.toDate).toISOString().substring(0, 10): null
       }));
     });
 
@@ -538,7 +527,7 @@ export class EmployeeComponent implements OnInit {
         id: d.id,
         documentName: d.documentName,
         fileName: d.fileName,
-        uploadDate: d.uploadDate,
+        uploadDate: d.uploadDate? new Date(d.uploadDate).toISOString().substring(0, 10): null,
         uploadedFileExtention: d.uploadedFileExtention,
         uploadedFile: null // file reselect required
       }));

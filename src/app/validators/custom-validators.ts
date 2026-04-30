@@ -36,20 +36,4 @@ export function passingYearValidator(
   };
 }
 
-export function duplicateEducationValidator(): ValidatorFn {
-  return (formArray: AbstractControl): ValidationErrors | null => {
-    if (!(formArray instanceof FormArray)) return null;
-
-    const combos = formArray.controls.map(ctrl =>
-      ctrl.get('idEducationLevel')?.value + '-' +
-      ctrl.get('idEducationExamination')?.value
-    );
-
-    const hasDuplicate = combos.some(
-      (v, i) => combos.indexOf(v) !== i && v !== 'null-null'
-    );
-
-    return hasDuplicate ? { duplicateEducation: true } : null;
-  };
-}
 
