@@ -10,14 +10,14 @@
       </div>
       <div *ngIf="isLoading()">Loading employees...</div>
       <ng-container *ngIf="!isLoading() && filteredEmployeeList().length > 0">
-        <div class="card employee-card mb-1" (click)="onEmployeeClick(emp.employeeId)" style="cursor: pointer"
-          *ngFor="let emp of filteredEmployeeList()">
+
+        <div class="card employee-card mb-1" [class.disabled]="uiMode() === 'ADD' || uiMode() === 'EDIT'"
+          (click)="onEmployeeClick(emp.employeeId)" *ngFor="let emp of filteredEmployeeList()" style="cursor: pointer">
           <div class="card-body">
-            <p> # {{ emp.employeeId }}
-              {{ emp.employeeName }},
-              {{ emp.designationName }}</p>
+            <p># {{ emp.employeeId }} {{ emp.employeeName }}, {{ emp.designationName }}</p>
           </div>
         </div>
+
       </ng-container>
       <div *ngIf="!isLoading() && filteredEmployeeList().length === 0">
         No employees found

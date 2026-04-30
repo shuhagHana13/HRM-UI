@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { EmployeeListDto } from '../../models/employeeList.model';
 import { finalize } from 'rxjs';
 import { EmployeeDto } from '../../models/employee.model';
-import { dateRangeValidator, duplicateEducationValidator, passingYearValidator } from '../../validators/custom-validators';
+import { dateRangeValidator, passingYearValidator } from '../../validators/custom-validators';
 type UiMode = 'INITIAL' | 'ADD' | 'VIEW' | 'EDIT';
 @Component({
   selector: 'app-employee-component',
@@ -129,7 +129,7 @@ export class EmployeeComponent implements OnInit {
       idReligion: [null],
       idJobType: [null],
       idEmployeeType: [null],
-      idDepartment: [null,Validators.required],
+      idDepartment: [null, Validators.required],
       idSection: [null, Validators.required],
       idDesignation: [null],
       idReportingManager: [null],
@@ -179,7 +179,7 @@ export class EmployeeComponent implements OnInit {
         fileName: file.name,
         uploadedFileExtention: file.name.substring(file.name.lastIndexOf('.')),
         uploadDate: new Date().toISOString().substring(0, 10),
-        uploadedFile: pureBase64  
+        uploadedFile: pureBase64
       });
     };
 
@@ -205,75 +205,72 @@ export class EmployeeComponent implements OnInit {
 
 
   addEducation() {
-  const group = this.fb.group({
-    idClient: [this.idClient(), Validators.required],
-    idEducationLevel: [null, Validators.required],
-    idEducationExamination: [null, Validators.required],
-    idEducationResult: [null, Validators.required],
-    major: ['', [Validators.required, Validators.maxLength(50)]],
-    passingYear: ['', [Validators.pattern(/^\d{4}$/), passingYearValidator('birthDate')]],
-    instituteName: ['', [Validators.required, Validators.maxLength(250)]],
-    cgpa: ['']
-  });
+    const group = this.fb.group({
+      idClient: [this.idClient(), Validators.required],
+      idEducationLevel: [null, Validators.required],
+      idEducationExamination: [null, Validators.required],
+      idEducationResult: [null, Validators.required],
+      major: ['', [Validators.required, Validators.maxLength(50)]],
+      passingYear: ['', [Validators.pattern(/^\d{4}$/), passingYearValidator('birthDate')]],
+      instituteName: ['', [Validators.required, Validators.maxLength(250)]],
+      cgpa: ['']
+    });
 
-  this.education.push(group);
-
-  group.markAllAsTouched();
-}
+    this.education.push(group);
+    group.markAllAsTouched();
+  }
 
 
   addDocument() {
-  const group = this.fb.group({
-    idClient: [this.idClient(), Validators.required],
-    id: [0],
-    documentName: ['', Validators.required],
-    fileName: ['', Validators.required],
-    uploadDate: ['', Validators.required],
-    uploadedFileExtention: ['', Validators.maxLength(10)],
-    uploadedFile: [null, Validators.required]
-  });
-  this.employeeDocuments.push(group);
+    const group = this.fb.group({
+      idClient: [this.idClient(), Validators.required],
+      id: [0],
+      documentName: ['', Validators.required],
+      fileName: ['', Validators.required],
+      uploadDate: [''],
+      uploadedFileExtention: ['' ],
+      uploadedFile: [null,]
+    });
+    this.employeeDocuments.push(group);
 
-  group.markAllAsTouched();
-}
+    group.markAllAsTouched();
+  }
 
 
   addFamily() {
-  const group = this.fb.group({
-    idClient: [this.idClient(), Validators.required],
-    id: [0],
-    name: ['', Validators.required],
-    idGender: [null, Validators.required],
-    idRelationship: [null, Validators.required],
-    dateOfBirth: [''],
-    contactNo: ['', Validators.pattern(/^(01)[0-9]{9}$/)],
-    currentAddress: ['', Validators.maxLength(500)],
-    permanentAddress: ['', Validators.maxLength(500)]
-  });
+    const group = this.fb.group({
+      idClient: [this.idClient(), Validators.required],
+      id: [0],
+      name: ['', Validators.required],
+      idGender: [null, Validators.required],
+      idRelationship: [null, Validators.required],
+      dateOfBirth: [''],
+      contactNo: [''],
+      currentAddress: ['', Validators.maxLength(500)],
+      permanentAddress: ['', Validators.maxLength(500)]
+    });
 
-  this.family.push(group);
+    this.family.push(group);
+    group.markAllAsTouched();
+  }
 
+  addCertification() {
+    const group = this.fb.group({
+      idClient: [this.idClient(), Validators.required],
+      id: [0],
+      certificationTitle: ['', Validators.required],
+      certificationInstitute: ['', Validators.required],
+      instituteLocation: ['', Validators.maxLength(250)],
+      fromDate: ['', Validators.required],
+      toDate: ['', Validators.required]
+    }, {
+      validators: dateRangeValidator('fromDate', 'toDate')
+    });
 
-  group.markAllAsTouched();
-}
+    this.certifications.push(group);
 
- addCertification() {
-  const group = this.fb.group({
-    idClient: [this.idClient(), Validators.required],
-    id: [0],
-    certificationTitle: ['', Validators.required],
-    certificationInstitute: ['', Validators.required],
-    instituteLocation: ['', Validators.maxLength(250)],
-    fromDate: ['', Validators.required],
-    toDate: ['', Validators.required]
-  }, {
-    validators: dateRangeValidator('fromDate', 'toDate')
-  });
-
-  this.certifications.push(group);
-
-  group.markAllAsTouched();
-}
+    group.markAllAsTouched();
+  }
 
 
 
@@ -296,43 +293,81 @@ export class EmployeeComponent implements OnInit {
 
 
   submit(): void {
+
+    const raw = this.employeeForm.getRawValue();
+
+    console.log('=== SUBMIT DEBUG ===');
+    console.log(raw);
+    console.log('Save clicked');
+
     if (this.employeeForm.invalid) {
-       console.log('Save clicked')
       this.employeeForm.markAllAsTouched();
-       alert('Form is invalid');
+
+      console.log('Form invalid');
+      console.log('Form errors:', this.employeeForm.errors);
+      console.log('Form value (raw):', this.employeeForm.getRawValue());
+
+      alert('Form is invalid');
       return;
     }
 
-    let payload = { ...this.employeeForm.value };
+    // ✅ MUST USE getRawValue()
+    const payload = this.employeeForm.getRawValue();
 
-    // ALWAYS enforce idClient
+    // enforce idClient
     payload.idClient = this.idClient();
 
     // Fix nested arrays
-    payload.employeeEducationInfos?.forEach((e: any) => e.idClient = this.idClient());
-    payload.employeeFamilyInfos?.forEach((f: any) => f.idClient = this.idClient());
-    payload.employeeProfessionalCertifications?.forEach((c: any) => c.idClient = this.idClient());
-    payload.employeeDocuments?.forEach((d: any) => d.idClient = this.idClient());
+    payload.employeeEducationInfos?.forEach((e: any) => {
+      e.idClient = this.idClient();
+      if (!e.id) e.id = 0;
+    });
+
+    payload.employeeFamilyInfos?.forEach((f: any) => {
+      f.idClient = this.idClient();
+      if (!f.id) f.id = 0;
+    });
+
+    payload.employeeProfessionalCertifications?.forEach((c: any) => {
+      c.idClient = this.idClient();
+      if (!c.id) c.id = 0;
+    });
+
+    payload.employeeDocuments?.forEach((d: any) => {
+      d.idClient = this.idClient();
+      if (!d.id) d.id = 0;
+    });
 
     // employeeImage fix
     if (!payload.employeeImage || payload.employeeImage.length === 0) {
       payload.employeeImage = null;
     }
 
+    console.log('FINAL PAYLOAD:', payload);
+
     this.isSaving.set(true);
-    const request$ = this.uiMode() === 'EDIT'
-      ? this.employeeService.updateEmployee(this.selectedEmployeeId()!, payload)
-      : this.employeeService.createEmployee(payload);
+
+    const request$ =
+      this.uiMode() === 'EDIT'
+        ? this.employeeService.updateEmployee(this.selectedEmployeeId()!, payload)
+        : this.employeeService.createEmployee(payload);
 
     request$
       .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
         next: () => {
-          alert(this.isEditMode() ? 'Employee updated successfully' : 'Employee created successfully');
+          alert(
+            this.uiMode() === 'EDIT'
+              ? 'Employee updated successfully'
+              : 'Employee created successfully'
+          );
           this.resetForm();
           this.loadEmployees();
         },
-        error: err => console.error(err)
+        error: err => {
+          console.error('Save failed', err);
+          alert('Save failed');
+        }
       });
   }
 
@@ -345,7 +380,7 @@ export class EmployeeComponent implements OnInit {
       idClient: this.idClient(),
       hasOvertime: false,
       hasAttendenceBonus: false,
-      isActive: false
+      isActive: true
     });
 
     // clear arrays
@@ -366,12 +401,17 @@ export class EmployeeComponent implements OnInit {
 
   }
 
+
   onEmployeeClick(employeeId: number): void {
-    this.isEditMode.set(true);
-    this.selectedEmployeeId.set(employeeId);
+    if (this.uiMode() === 'ADD' || this.uiMode() === 'EDIT') {
+      return;
+    }
+
     this.uiMode.set('VIEW');
+    this.selectedEmployeeId.set(employeeId);
     this.loadEmployeeById(employeeId);
   }
+
 
 
   loadEmployeeById(employeeId: number): void {
@@ -386,23 +426,23 @@ export class EmployeeComponent implements OnInit {
 
 
   onImageWheel(event: WheelEvent): void {
-  event.preventDefault();
+    event.preventDefault();
 
-  const img = event.target as HTMLImageElement;
-  if (!img || !img.classList.contains('employee-image-preview')) {
-    return;
+    const img = event.target as HTMLImageElement;
+    if (!img || !img.classList.contains('employee-image-preview')) {
+      return;
+    }
+
+    const zoomFactor = event.deltaY < 0 ? 1.1 : 0.9;
+
+    const currentScale =
+      img.style.transform.match(/scale\(([^)]+)\)/)?.[1] ?? '1';
+
+    let newScale = +currentScale * zoomFactor;
+    newScale = Math.min(Math.max(newScale, 1), 3); // clamp
+
+    img.style.transform = `scale(${newScale})`;
   }
-
-  const zoomFactor = event.deltaY < 0 ? 1.1 : 0.9;
-
-  const currentScale =
-    img.style.transform.match(/scale\(([^)]+)\)/)?.[1] ?? '1';
-
-  let newScale = +currentScale * zoomFactor;
-  newScale = Math.min(Math.max(newScale, 1), 3); // clamp
-
-  img.style.transform = `scale(${newScale})`;
-}
 
   populateForm(emp: EmployeeDto): void {
 

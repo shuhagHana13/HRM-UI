@@ -81,3 +81,11 @@ input[type="file"]:disabled {
   cursor: not-allowed;
   background-color: #f1f1f1;
 }
+
+
+.employee-card.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
