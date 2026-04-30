@@ -14,9 +14,9 @@
         <div class="card employee-card mb-1" [class.disabled]="uiMode() === 'ADD' || uiMode() === 'EDIT'"
           (click)="onEmployeeClick(emp.employeeId)" *ngFor="let emp of filteredEmployeeList()" style="cursor: pointer">
           <div class="card-body">
-            <p>Id: {{ emp.employeeId }} </p>
-            <p> Name: {{ emp.employeeName }} </p>
-             <p> Designation: {{ emp.designationName }}</p>
+            <p> <strong>Id:</strong> {{ emp.employeeId }} </p>
+            <p> <strong>Name:</strong> {{ emp.employeeName }} </p>
+             <p> <strong>Designation:</strong> {{ emp.designationName }}</p>
           </div>
         </div>
 

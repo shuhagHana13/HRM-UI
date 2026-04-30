@@ -305,7 +305,6 @@ export class EmployeeComponent implements OnInit {
       this.employeeForm.markAllAsTouched();
 
       console.log('Form invalid');
-      console.log('Form errors:', this.employeeForm.errors);
       console.log('Form value (raw):', this.employeeForm.getRawValue());
       alert('Form is invalid');
       return;
@@ -529,7 +528,7 @@ export class EmployeeComponent implements OnInit {
         fileName: d.fileName,
         uploadDate: d.uploadDate? new Date(d.uploadDate).toISOString().substring(0, 10): null,
         uploadedFileExtention: d.uploadedFileExtention,
-        uploadedFile: null // file reselect required
+        uploadedFile: null 
       }));
     });
 
@@ -540,12 +539,10 @@ export class EmployeeComponent implements OnInit {
 
   deleteEmployee(): void {
     if (!this.selectedEmployeeId()) return;
-
     const confirmed = confirm('Are you sure you want to delete this employee?');
     if (!confirmed) return;
 
     this.isSaving.set(true);
-
     this.employeeService
       .softDeleteEmployee(this.idClient(), this.selectedEmployeeId()!)
       .pipe(finalize(() => this.isSaving.set(false)))
